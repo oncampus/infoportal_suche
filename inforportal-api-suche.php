@@ -23,5 +23,13 @@ function infoportal_api_suche_postfix() {
     delete_option("objectToSave");
 }
 
+/**
+ * CleanUp on Uninstall
+ */
+function infoportal_api_suche_ultima() {
+    delete_option("objectToSave");
+}
+
 register_activation_hook(__FILE__, 'infoportal_api_suche_prefix');
 register_deactivation_hook(__FILE__, 'infoportal_api_suche_postfix');
+register_uninstall_hook(__FILE__, 'infoportal_api_suche_ultima');
