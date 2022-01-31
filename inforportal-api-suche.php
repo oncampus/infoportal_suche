@@ -33,6 +33,9 @@ class InfoportalApiSearch
 
         add_settings_field('api_link_token', 'Generated Token', array($this, 'tokenHTML'), 'hit-that-lick', 'al_first_section');
         register_setting('apiPluginGroup', 'al_link_token', array('sanatize_callback' => 'sanatize_text_field', 'default' => 'tonkle'));
+
+        add_settings_field('api_link_search', 'Search', array($this, 'searchHTML'), 'hit-that-lick', 'al_first_section');
+        register_setting('apiPluginGroup', 'al_link_search', array('sanatize_callback' => 'sanatize_text_field', 'default' => 'dunkle'));
     }
 
     function chooserHTML() { ?>
@@ -50,10 +53,14 @@ class InfoportalApiSearch
         <input type="text" name="al_link_token" value="<?php echo esc_attr(get_option('al_link_token')) ?>">
     <?php }
 
+    function searchHTML() {?> 
+        <input type="text" name="al_link_search" value="<?php echo esc_attr(get_option('al_link_search')) ?>">
+    <?php }
+
     // Registering the Settings-Link
     function settingsLink()
     {
-        add_options_page('Devious Lick', 'Licks', 'manage_options', 'hit-that-lick', array($this, 'simpleHTML'));
+        add_options_page('Devious Lick', 'Licks', 'manage_options', 'hit-that-lick', array($this, 'sickFunctionHTML'));
     }
 
     function simpleHTML() { ?>
@@ -72,13 +79,16 @@ class InfoportalApiSearch
     // Whatever happens here happens :)
     function sickFunctionHTML()
     {
-        $url = 'https://dev09.oncampus-server.de/webservice/rest/';
+        // $url = 'https://dev09.oncampus-server.de/webservice/rest/';
+        $url = get_option('al_link_single');
 
-        $testerToken = '6295a85a88bffcfe147c85c3a28beb96';
+        // $testerToken = '6295a85a88bffcfe147c85c3a28beb96';
+        $testerToken = get_option('al_link_token');
+
         $wsFunction = 'core_course_search_courses';
         $moodlewsRestFormat = 'json';
         $criteriaName = 'search';
-        $criteriaValue = 'visual'; //What to look for. Obv shouldnt be hardcoded later on
+        $criteriaValue = get_option('al_link_search');
 
         // For a normal Course-Search query
         $restCall = $url
@@ -91,30 +101,35 @@ class InfoportalApiSearch
         $response = file_get_contents($restCall);
         $htmlStripped = strip_tags($response);
         $jsonResponse = json_decode($htmlStripped, true);
-
         /*
         if ($htmlStripped) {
             print_r($htmlStripped);
         }
-
-        if ($jsonResponse) {
-            print_r($jsonResponse);
-        }
         */
 
         
+        
+        if ($jsonResponse) {
+            foreach($jsonResponse['courses'] as $course) {
+                echo "<br>";
+                print_r($course['fullname']);
+                echo "<br>";
+                print_r($course['summary']);
+                echo "<br>";
+            }
+        }
+        
 ?>
-        <div class="wrap">
-            <h1>That Little Setting Stuff</h1>
-            <form action="options.php" method="post">
+        <div< class="wrap">
+            <h1>API Search Settings</h1>
+            <form action="options.php" method="POST">
                 <?php
-                    settings_fields('al_links');
+                    settings_fields('apiPluginGroup');
                     do_settings_sections('hit-that-lick');
                     submit_button();
                 ?>
-                <input name="submit" class="button button-primary" type="submit" value="<?php esc_attr_e('Save'); ?>" />
             </form>
-        </div>
+        </class>
 <?php }
 }
 
