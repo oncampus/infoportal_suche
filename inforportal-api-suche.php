@@ -7,6 +7,15 @@
  * Version: 1.0.0
  */
 
+
+ /*
+TODO:
+- merging queries
+- make links in search query clickable
+- add Wordpress/GraphQL Queries
+- Multiple APIs (maybe save them as an Array of API-Accesstoken Objects or something)
+ */
+
 if (!defined('ABSPATH')) {
     exit; // Exit if accessed directly
 }
@@ -147,15 +156,18 @@ class InfoportalApiSearch
                 $post->post_name = 'fake-page-' . rand(1, 99999); // append random number to avoid clash
                 $post->post_type = 'page';
                 $post->filter = 'raw'; // important!
+                $post->guid = 'google.com';
 
                 $wp_post = new WP_Post($post);
                 wp_cache_add($debugID, $wp_post, 'posts');
                 array_push($post_array, $wp_post);
             }
 
-
-            //print_r($post_array);
-
+            /*
+            print("</br>REST-Abfrage:</br>");
+            print_r($post_array);
+            print("</br></br>Wordpress Query Posts:</br>");
+*/
             
             /*
             $objectedVars = get_object_vars($wp_query);
@@ -170,16 +182,17 @@ class InfoportalApiSearch
 
 
 
-            /*
+            
             // Creating a fake-query
+            // for now this holds only one post as i did not know how to implement multiple
             $wp_queryT = new WP_Query();
             $wp_queryT->post = $wp_post;
             $wp_queryT->posts = array($wp_post);
             $wp_queryT->queried_object = $wp_post;
             $wp_queryT->queried_object_id = $debugID;
-            $wp_queryT->found_posts = 1;
-            $wp_queryT->post_count = 1;
-            $wp_queryT->max_num_pages = 1;
+            //$wp_queryT->found_posts = 1;
+            //$wp_queryT->post_count = 1;
+            //$wp_queryT->max_num_pages = 1;
             $wp_queryT->is_page = true;
             $wp_queryT->is_singular = true;
             $wp_queryT->is_single = false;
@@ -206,24 +219,17 @@ class InfoportalApiSearch
             $wp_queryT->is_robots = false;
             $wp_queryT->is_posts_page = false;
             $wp_queryT->is_post_type_archive = false;
-            */
-            foreach($wp_query as &$variables) {
-                print_r($variables);
-                print("</br></br>");
-            }
-
-            $wp_query->posts = array_push($wp_query->posts, $post_array);
+            
+            
+            
+            $wp_query->posts = array_merge($wp_query->posts, $post_array);
             $wp_query->post_count = $wp_query->post_count + count($post_array);
             $wp_query->found_posts = $wp_query->post_count;
+            
 
-            print("</br></br></br>===============================================================================</br></br></br>");
-            foreach($wp_query as &$variables) {
-                print_r($variables);
-                print("</br></br>");
-            }
+            //print_r($wp_query);
 
-
-            $GLOBALS['wp_query'] = $wp_query;
+            $GLOBALS['wp_query'] = $wp_queryT;
             $wp->register_globals();
         }
     }
@@ -263,6 +269,7 @@ class InfoportalApiSearch
         <select name="al_links">
             <option value="0" <?php selected(get_option('al_links'), '0') ?>>Moodle API</option>
             <option value="1" <?php selected(get_option('al_links'), '1') ?>>Wordpress API</option>
+            <option value="2" <?php selected(get_option('al_links'), '2') ?>>GraphQL API</option>
         </select>
     <?php }
 
