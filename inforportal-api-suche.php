@@ -10,6 +10,17 @@
 
  /*
 TODO:
+Marc nochmal fragen, ob es zwischengespeichert werden muss
+
+- auf Shortcode Plugin umstellen
+- (Asynchrone Anfragen alle Links senden)
+- Laurenz/Konstantin nach Quiz wegen Architektur fragen (weiterbilden SH)
+- - 1. Für die Suche/ das Suchfeld (zum starten der Suche)
+- - 2. Shortode, welcher COntentbereich rendet. "On Callback" Inhalt laden
+
+
+
+TODO:
 - merging queries
 - make links in search query clickable
 - add Wordpress/GraphQL Queries
@@ -68,77 +79,6 @@ class InfoportalApiSearch
             $htmlFiltered = $firstChunk . $secondChunk;
             $callResponseJSON = array_values(json_decode($htmlFiltered, true)); // formatting
 
-
-
-            /* 
-            [0] => Array (
-                [id] => 3
-                [fullname] => All about your Dwarven Moods
-                [displayname] => All about your Dwarven Moods
-                [shortname] => Moods
-                [categoryid] => 2
-                [categoryname] => Overview
-                    [sortorder] => 10001
-                [summary] => Youd be surprised, how moody these little shits get over time… Or just due to sunlight.
-                [summaryformat] => 1
-                [summaryfiles] => Array()
-                [overviewfiles] => Array(
-                    [0] => Array(
-                    [filename] => 1200px-Jean-Léon_Gérôme_-_Diogenes_-_Walters_37131.jpg
-                    [filepath] => /
-                    [filesize] => 277187
-                    [timemodified] => 1643626167
-                    [mimetype] => image/jpeg
-                    )
-                )
-                [showactivitydates] => 1
-                [showcompletionconditions] => 1
-                [contacts] => Array(
-                    [0] => Array(
-                        [id] => 2
-                        [fullname] => Daniel Waage
-                    )
-                )
-                [enrollmentmethods] => Array(
-                    [0] => manual
-                )
-            )
-
-            [1] => Array(
-                [id] => 2
-                [fullname] => The Visual Style
-                [displayname] => The Visual Style
-                [shortname] => Graphics
-                [categoryid] => 2
-                [categoryname] => Overview
-                [sortorder] => 10002
-                [summary] => A quick explanation on the graphic style of Dwarf Fortress
-                [summaryformat] => 1
-                [summaryfiles] => Array()
-                [overviewfiles] => Array(
-                    [0] => Array(
-                        [filename] => DF-Logo-NT.png
-                        [filepath] => /
-                        [filesize] => 4901
-                        [fileurl] => https://dev09.oncampus-server.de/webservice/pluginfile.php/17/course/overviewfiles/DF-Logo-NT.png
-                        [timemodified] => 1641559575
-                        [mimetype] => image/png
-                    )
-                )
-                [showactivitydates] => 1
-                [showcompletionconditions] => 1
-                [contacts] => Array(
-                [0] => Array(
-                        [id] => 2
-                        [fullname] => Daniel Waage
-                    )
-                )
-                [enrollmentmethods] => Array(
-                    [0] => manual
-                )
-            )
-            */
-
             $post_array = [];
             
             foreach ($callResponseJSON[1] as &$valueArray) {
@@ -163,26 +103,6 @@ class InfoportalApiSearch
                 array_push($post_array, $wp_post);
             }
 
-            /*
-            print("</br>REST-Abfrage:</br>");
-            print_r($post_array);
-            print("</br></br>Wordpress Query Posts:</br>");
-*/
-            
-            /*
-            $objectedVars = get_object_vars($wp_query);
-            foreach($objectedVars["posts"] as &$help) {
-                print_r($help);
-                print("</br>   ");
-            }
-            */
-
-
-
-
-
-
-            
             // Creating a fake-query
             // for now this holds only one post as i did not know how to implement multiple
             $wp_queryT = new WP_Query();
@@ -238,6 +158,8 @@ class InfoportalApiSearch
     function settings()
     {
         add_settings_section('al_first_section', null, null, 'hit-that-lick');
+
+        register_setting('apiPluginGroup', 'api_option_list', array('sanatize_callback' => array($this, 'sanatizeOptions'), 'default' => array(new APIOptions('linkle', 'tonkle', 0))));
 
         add_settings_field('api_links', 'Choose your API', array($this, 'chooserHTML'), 'hit-that-lick', 'al_first_section');
         register_setting('apiPluginGroup', 'al_links', array('sanatize_callback' => 'sanatize_text_field', 'default' => '0'));
@@ -311,46 +233,10 @@ class InfoportalApiSearch
     // Whatever happens here happens :)
     function sickFunctionHTML()
     {
-        // $url = 'https://dev09.oncampus-server.de/webservice/rest/'; // hardcoded
-        $url = get_option('al_link_single');
-
-        // $testerToken = '6295a85a88bffcfe147c85c3a28beb96'; // hardcoded
-        $testerToken = get_option('al_link_token');
-
-        $wsFunction = 'core_course_search_courses'; // Rest-Call-Header (?)
-        $moodlewsRestFormat = 'json';
-        $criteriaName = 'search'; // Function
-        $criteriaValue = get_option('al_link_search'); // What-To-Search-For
-
-        // For a normal Course-Search "query" (Slap that boi together)
-        $restCall = $url
-            . 'server.php?wstoken=' . $testerToken
-            . '&wsfunction=' . $wsFunction
-            . '&moodlewsrestformat=' . $moodlewsRestFormat
-            . '&criterianame=' . $criteriaName
-            . '&criteriavalue=' . $criteriaValue;
-
-        $response = file_get_contents($restCall); // The actual call
-        $htmlStripped = strip_tags($response); // formatting
-        $jsonResponse = json_decode($htmlStripped, true); // formatting
-
-        if ($htmlStripped) {
-            print_r($htmlStripped);
-        }
-
-
-
-
-
-        if ($jsonResponse) {
-            foreach ($jsonResponse['courses'] as $course) {
-                echo "<br>";
-                print_r($course['fullname']);
-                echo "<br>";
-                print_r($course['summary']);
-                echo "<br>";
-            }
-        }
+        
+        $apiOptions = get_option('api_option_list');
+        print_r('Options: ');
+        print_r($apiOptions);
 
         ?>
             <div< class="wrap">
@@ -364,6 +250,23 @@ class InfoportalApiSearch
                 </form>
                 </class>
         <?php }
+
+}
+
+class APIOptions {
+    public string $link;
+    public string $token;
+    public int $apiKey;
+
+    public function __construct(string $linkIn, string $tokenIn, int $apiIn) {
+        $this->link = $linkIn;
+        $this->token = $tokenIn;
+        $this->apiKey = $apiIn;
+    }
+
+    public function __toString() {
+        return 'link: ' . $this->link . ", token: " . $this->token . ", apiKey: " . $this->apiKey;
+    }
 }
 
 $infoportalApiSearch = new InfoportalApiSearch();
